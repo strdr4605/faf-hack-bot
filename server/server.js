@@ -17,10 +17,12 @@ export default class Server {
     this.app.get('/api/v1', (req, res)=> {
       res.send('Hi')
     })
+    this.app.post('/api/v1', (req, res) => {
+      this.dialogFlowPost(req, res)
+    })
   }
 
-  dialogFlowPost() {
-    this.app.post('/api/v1', (req, res) => {
+  dialogFlowPost(req, res) {
       let name = req.body.result.parameters.account
       let origin
       if ( req.body.originalRequest) {
@@ -39,8 +41,7 @@ export default class Server {
         contextOut: [],
         source: origin
       })
-    })
-  }
+    }
 
 
 }
