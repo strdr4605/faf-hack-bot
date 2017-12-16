@@ -6,7 +6,7 @@ export default class Server {
     this.app = app
     this.createBasicRoute()
     this.start()
-    this.intent = new IntentsProcessing();
+    this.intent = new IntentsProcessing()
   }
 
   start() {
@@ -25,20 +25,20 @@ export default class Server {
   }
 
   dialogFlowPost(req, res) {
-    let origin;
+    let origin
     if (req.body.originalRequest) {
-      origin = req.body.originalRequest.source;
+      origin = req.body.originalRequest.source
     } else {
-      origin = req.body.result.source;
+      origin = req.body.result.source
     }
 
-    let speech = this.intent.speechParser(req);
+    let speech = this.intent.speechParser(req)
     res.send({
       speech: speech,
       displayText: "123",
       data: {},
       contextOut: [],
       source: origin
-    });
+    })
   }
 }
