@@ -27,7 +27,7 @@ app.post('/', (req, res) => {
   }
   let account = db.data.accounts.find((account) => (account.name === name))
 
-  let speech = req.body.result.fulfillment.speech + ` ${account.balance} ${account.currency_code}`
+  let speech = account ? req.body.result.fulfillment.speech + ` ${account.balance} ${account.currency_code}` : `Sorry, can't find it!`
 
   res.send({
     speech: speech,
