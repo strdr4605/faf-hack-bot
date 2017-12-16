@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/strdr4605/faf-hack-bot/issues"
   },
-  "homepage": "https://github.com/strdr4605/faf-hack-bot#readme"
+  "homepage": "https://github.com/strdr4605/faf-hack-bot#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "nodemon": "^1.13.3"
+  }
 }
