@@ -4,9 +4,9 @@ import IntentsProcessing from './IntentsProcessing'
 export default class Server {
   constructor(app) {
     this.app = app
+    this.intent = new IntentsProcessing()
     this.createBasicRoute()
     this.start()
-    this.intent = new IntentsProcessing()
   }
 
   start() {
@@ -15,7 +15,9 @@ export default class Server {
     })
   }
 
-  createBasicRoute() {
+  async createBasicRoute() {
+    let currency = await this.intent.currencyRequest()
+    config.currency = currency;
     this.app.get('/api/v1', (req, res) => {
       res.send('Hi')
     })

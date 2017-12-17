@@ -1,5 +1,8 @@
 import config from './config'
 import PlotGenerator from './plotGenerator'
+import http from 'http'
+require("babel-core/register");
+require("babel-polyfill");
 
 export default class IntentsProcessing {
   constructor() {
@@ -129,17 +132,24 @@ export default class IntentsProcessing {
       case "statistics pm":
         object = this.getPlot(this.getPeriod(req), req)
         break
-      }
-      messages.push(object)
+      case "currency":
+        object = this.getSpeechObject(this.currencyConvert(req), req)
+        break
+      case "currency exchange":
+        object = this.getSpeechObject(this.getCurrency(req), req)
+        break
+    }
+    messages.push(object)
 
-      return messages
+    return messages
   }
 
   getPeriod(req) {
     let name = req.body.result.parameters.account
     let period = req.body.result.parameters.period
     let monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
-    'july', 'august', 'september', 'october', 'november', 'december']
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ]
     let speech
     if (name) {
       let account = this.data.accounts.find((account) => (account.name === name))
@@ -153,7 +163,7 @@ export default class IntentsProcessing {
           })
           monthNames.forEach((obj, index) => {
             let monthAmount = transactions.filter((el) => (new Date(el.made_on).getMonth() == index))
-                                          .reduce((sum, el) => (sum += el.amount), 0)
+              .reduce((sum, el) => (sum += el.amount), 0)
             monthsAmount.push(monthAmount)
           })
 
@@ -163,14 +173,14 @@ export default class IntentsProcessing {
           }
         } else {
           let days = []
-          for(let i = 1; i <= this.daysInMonth(monthNames.indexOf(period) + 1); i++){
+          for (let i = 1; i <= this.daysInMonth(monthNames.indexOf(period) + 1); i++) {
             days.push(i)
           }
           let daysAmount = days
           let transactionsMonth = transactions.filter((el) => (new Date(el.made_on).getMonth() == monthNames.indexOf(period)))
           daysAmount = daysAmount.map((day) => {
-            return transactionsMonth.filter((el)=> (new Date(el.made_on).getDate() == day))
-                                    .reduce((sum, el) => (sum += el.amount), 0)
+            return transactionsMonth.filter((el) => (new Date(el.made_on).getDate() == day))
+              .reduce((sum, el) => (sum += el.amount), 0)
           })
 
           return {
@@ -186,7 +196,7 @@ export default class IntentsProcessing {
   }
 
   daysInMonth(month) {
-    return new Date(new Date().getFullYear() , month, 0).getDate()
+    return new Date(new Date().getFullYear(), month, 0).getDate()
   }
 
 
@@ -201,23 +211,65 @@ export default class IntentsProcessing {
   getPlot(data, req) {
     let platform = this.getPlatform(req)
     return {
-        imageUrl: this.plotGenerator.getImageUrl(data, req),
-        platform: platform,
-        type: 3
-      }
-  }
-
-  imageParser(req) {
-    let intentName = req.body.result.metadata.intentName
-    return "https://3c1703fe8d.site.internapcdn.net/newman/gfx/news/hires/2016/63-scientistsdi.jpg";
-  }
-
-  getSpeechObject(speech, req) {
-    let platform = this.getPlatform(req)
-    return {
-      "platform": platform,
-      "speech": speech,
-      "type": 0
+      imageUrl: this.plotGenerator.getImageUrl(data, req),
+      platform: platform,
+      type: 3
     }
   }
-}
+
+  currencyRequest() {
+    return new Promise((resolve, reject) => {
+      http.get('http://www.apilayer.net/api/live?access_key=fea2bfc061058a97b226296f0eede22f&format=1', (resp) => { 
+        let data = ''
+        resp.on('data', (chunk) => {  
+          data += chunk;
+        });
+        resp.on('end', () => {  
+          resolve(JSON.parse(data))
+        });
+      }).on("error", (err) => { 
+        reject(err)
+      });
+    });
+  }
+
+  currencyConvert(req) {
+    let name = req.body.result.parameters.account
+    let currency1 = req.body.result.parameters.currency_name
+    let currency_db = config.currency.quotes;
+    let account = this.data.accounts.find((account) => (account.name === name))
+    let balance = account.balance
+    let currency2 = account.currency_code
+    if (currency_db[currency1 + currency2]) {
+      balance = balance / currency_db[currency1 + currency2]
+    } else if (currency_db[currency2 + currency1]) {
+      balance = balance * currency_db[currency2 + currency1]
+    } else {
+      balance = balance * (currency_db["USD" + currency1] / currency_db["USD" + currency2]);
+    }
+    let smile = balance > 0 ? " (y)" : " :("
+    let speech = this.replaceByTemplate(req.body.result.fulfillment.speech, name, balance.toFixed(2), currency1) + smile
+    return speech;
+  }
+
+  getCurrency(req) {
+    let currency1 = req.body.result.parameters.currency_name1
+    let currency2 = req.body.result.parameters.currency_name2
+    let currency_db = config.currency.quotes;
+    if (currency_db[currency1 + currency2]) {
+      return this.replaceByTemplate(req.body.result.fulfillment.speech, currency1, currency2, currency_db[currency1 + currency2].toFixed(2))
+    } else if (currency_db[currency2 + currency1]) {
+      return this.replaceByTemplate(req.body.result.fulfillment.speech, currency1, currency2, currency_db[currency2 + currency1].toFixed(2))
+    } else {
+      return this.replaceByTemplate(req.body.result.fulfillment.speech, currency1, currency2, currency_db["USD" + currency2] / currency_db["USD" + currency1].toFixed(2));
+    }
+
+    getSpeechObject(speech, req) {
+      let platform = this.getPlatform(req)
+      return {
+        "platform": platform,
+        "speech": speech,
+        "type": 0
+      }
+    }
+  }

@@ -4,5 +4,6 @@ let db = JSON.parse(fs.readFileSync(dataPath, 'UTF-8'))
 
 export default {
     port: process.env.PORT || 4444,
-    accountData: db
+    accountData: db,
+    currency: {}
   }
