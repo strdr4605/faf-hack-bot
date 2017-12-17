@@ -1,10 +1,23 @@
 import config from './config'
+import PlotGenerator from './plotGenerator'
 
 export default class IntentsProcessing {
   constructor() {
     this.data = config.accountData.data
+    this.plotGenerator = new PlotGenerator()
   }
 
+  speechParser(req) {
+    let intentName = req.body.result.metadata.intentName
+    switch (intentName) {
+      case "actual-balance":
+        return this.accountBalance(req)
+        break
+      case "last x transaction":
+        return this.lastXTransactions(req)
+        break
+    }
+  }
 
   replaceByTemplate(template, ...args) {
     args.forEach((elem, index) => (template = template.replace("{0}", elem)))
@@ -36,7 +49,6 @@ export default class IntentsProcessing {
     }
     return speech
   }
-
 
   lastXTransactions(req) {
     let transactionCount = req.body.result.parameters.number
@@ -124,7 +136,23 @@ export default class IntentsProcessing {
       case "transaction on":
         return this.transactionsOn(req)
         break
+  getPlot(req) {
+    let origin
+    if (req.body.originalRequest) {
+      origin = req.body.originalRequest.source
+    } else {
+      origin = req.body.result.source
     }
+    let platform = origin
+    let messages = [
+      {
+        imageUrl: this.plotGenerator.getImageUrl(req),
+        platform: platform,
+        type: 3
+      }
+    ]
+
+    return messages
   }
 
   imageParser(req) {

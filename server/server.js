@@ -49,6 +49,7 @@ export default class Server {
         "type": 3
       })
     }
+
     res.send({
       messages: messages,
       displayText: "123",
