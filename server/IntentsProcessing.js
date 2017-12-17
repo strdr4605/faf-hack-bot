@@ -144,6 +144,61 @@ export default class IntentsProcessing {
       return messages
   }
 
+  getPeriod(req) {
+    let name = req.body.result.parameters.account
+    let period = req.body.result.parameters.period
+    let monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December']
+    let speech
+    if (name) {
+      let account = this.data.accounts.find((account) => (account.name === name))
+      if (account) {
+        let transactions = account.transactions
+        if (monthNames.indexOf(period) === -1) {
+          let monthsAmount = []
+          yearTransactions = transactions.filter((el) => {
+            let year = new Date(el.made_on).getFullYear()
+            return year == period
+          })
+          monthNames.forEach((el, index) => {
+            let monthAmount = transactions.filter((el) => (new Date(el.made_on).getMonth() == index))
+                                          .reduce((el, sum) => (sum + el.amount), 0)
+            monthsAmount.push(monthAmount)
+          })
+
+          return {
+            x: monthNames,
+            y: monthsAmount
+          }
+        } else {
+          let days = []
+          for(let i = 1; i <= this.daysInMonth(monthNames.indexOf(period) + 1); i++){
+            days.push(i)
+          }
+          let daysAmount = days
+          transactionsMonth = transactions.filter((el) => (new Date(el.made_on).getMonth() == monthNames.indexOf(period)))
+          daysAmount = daysAmount.map((day) => {
+            return transactionsMonth.filter((el)=> (new Date(el.made_on).getDate() == day))
+                                    .reduce((el, sum) => (sum += el.amount), 0)
+          })
+          
+          return {
+            x: days,
+            y: daysAmount
+          }
+        }
+      
+      } else {
+        return {}
+      }
+    }
+  }
+
+  daysInMonth(month) {
+    return new Date(new Date().getFullYear() , 2, 0).getDate()
+  }
+
+
   getPlatform(req) {
     if (req.body.originalRequest) {
       return req.body.originalRequest.source
