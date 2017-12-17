@@ -2,14 +2,15 @@ import config from './config'
 import PlotGenerator from './plotGenerator'
 import http from 'http'
 import moment from 'moment'
-
-require("babel-core/register");
-require("babel-polyfill");
+import babelPolyfill from 'babel-polyfill'
+import babelCoreRegister from 'babel-core/register'
+import AmazonAPI from './AmazonAPI'
 
 export default class IntentsProcessing {
   constructor() {
     this.data = config.accountData.data
     this.plotGenerator = new PlotGenerator()
+    this.amazonAPI = new AmazonAPI()
   }
 
   replaceByTemplate(template, ...args) {
@@ -17,16 +18,21 @@ export default class IntentsProcessing {
     return template
   }
 
+  getBalance(name) {
+    let account = this.data.accounts.find((account) => (account.name === name))
+    return account.balance
+  }
+
   accountBalance(req) {
     let name = req.body.result.parameters.account
     let speech
     if (name) {
-      let account = this.data.accounts.find((account) => (account.name === name))
+      let balance = this.getBalance(name)
       if (account) {
         let smile = account.balance > 0 ? " (y)" : " :("
-        speech = this.replaceByTemplate(req.body.result.fulfillment.speech, account.name, account.balance, account.currency_code) + smile
+        speech = this.replaceByTemplate(req.body.result.fulfillment.speech, account.name, balance, account.currency_code) + smile
       } else {
-        speech = "Sorry, can't find such account!"
+        speech = "Sorry, can't find such account! But You will rich it!"
       }
     } else {
       let accounts = this.data.accounts
@@ -118,7 +124,7 @@ export default class IntentsProcessing {
     return "No transactions to be displayed!"
   }
 
-  speechParser(req) {
+  async speechParser(req) {
     let messages = []
     let object
     let intentName = req.body.result.metadata.intentName
@@ -147,9 +153,49 @@ export default class IntentsProcessing {
         break
       case "salary":
         object = this.getSpeechObject(this.whatIsMySalary(req), req)
+      case "buy":
+        let account = req.body.result.parameters.account
+        let moneyAmount = 0
+        if(req.body.result.parameters.account !== undefined &&
+           this.checkAccount(account)) {
+          if(req.result.resolvedQuery.includes("salary")) {
+            moneyAmount = this.accountSalary(account)
+          }
+          else {
+            moneyAmount = this.getBalance(accout)
+          }
+        } else {
+          object = this.getSpeechObject("No such accout", req)
+        }
+        let response = await this.getThingsToBuy(moneyAmount)
+        //console.log(response)
+        object = this.parseAmazonResponse(response, req)
+        console.log(object)
         break
+
+        return this.parseAmazonResponse(response, req)
     }
+
     messages.push(object)
+
+    return messages
+  }
+
+  getThingsToBuy(moneyAmount) {
+    let response = this.amazonAPI.search(moneyAmount, 0)
+    return response
+  }
+
+  parseAmazonResponse(response, req) {
+    let messages = []
+    let platform = this.getPlatform(req)
+    for(var i = 0; i < response.length; i++) {
+      messages.push({
+        "platform": platform,
+        "speech": response[i].DetailPageURL,
+        "type": 0
+      })
+    }
 
     return messages
   }
@@ -276,12 +322,15 @@ export default class IntentsProcessing {
     return sum;
   }
 
-  whatIsMySalary(req) {
-    let name = req.body.result.parameters.account
+  checkAccount(name) {
     let account = this.data.accounts.find((account) => (account.name === name))
     if (!account) {
-      return "No such account!"
+      return false
     }
+  }
+
+  whatIsMySalary(req) {
+    let name = req.body.result.parameters.account
     let salary = this.accountSalary(name)
     let speech = this.replaceByTemplate(req.body.result.fulfillment.speech, salary.toFixed(2), account.currency_code)
     return speech;

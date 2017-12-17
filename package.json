@@ -29,6 +29,8 @@
     "babel-register": "^6.26.0"
   },
   "dependencies": {
+    "amazon-product-api": "^0.4.4",
+    "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",
     "chart.js": "^2.7.1",
     "chartjs-node": "^1.6.0",
