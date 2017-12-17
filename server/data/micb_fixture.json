@@ -1,7 +1,7 @@
 {
   "data": {
     "accounts": [{
-      "name": "12345678",
+      "name": "1",
       "currency_code": "MDL",
       "balance": -2436.16,
       "extra": {
@@ -2587,7 +2587,7 @@
         "checksum": "5c04b0173720d782aa7ee211b1620167e199d09c27cc4619041871d7680aab36"
       }]
     }, {
-      "name": "225B123456",
+      "name": "2",
       "currency_code": "USD",
       "balance": 35.61,
       "extra": {

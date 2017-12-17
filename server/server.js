@@ -33,7 +33,23 @@ export default class Server {
     }
 
     let speech = this.intent.speechParser(req)
-    let messages = this.intent.getPlot(req)
+    let imageUrl = this.intent.imageParser(req)
+    let messages = [];
+    if (speech) {
+      messages.push({
+        "platform": origin,
+        "speech": speech,
+        "type": 0
+      })
+    }
+    if (imageUrl) {
+      messages.push({
+        "imageUrl": imageUrl,
+        "platform": origin,
+        "type": 3
+      })
+    }
+
     res.send({
       messages: messages,
       displayText: "123",
