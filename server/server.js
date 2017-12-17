@@ -33,8 +33,9 @@ export default class Server {
     }
 
     let speech = this.intent.speechParser(req)
+    let messages = this.intent.getPlot(req)
     res.send({
-      speech: speech,
+      messages: messages,
       displayText: "123",
       data: {},
       contextOut: [],
