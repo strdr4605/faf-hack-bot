@@ -126,4 +126,8 @@ export default class IntentsProcessing {
         break
     }
   }
+
+  imageParser(req) {
+    let intentName = req.body.result.metadata.intentName
+  }
 }
