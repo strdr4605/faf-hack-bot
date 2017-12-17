@@ -7,18 +7,6 @@ export default class IntentsProcessing {
     this.plotGenerator = new PlotGenerator()
   }
 
-  speechParser(req) {
-    let intentName = req.body.result.metadata.intentName
-    switch (intentName) {
-      case "actual-balance":
-        return this.accountBalance(req)
-        break
-      case "last x transaction":
-        return this.lastXTransactions(req)
-        break
-    }
-  }
-
   replaceByTemplate(template, ...args) {
     args.forEach((elem, index) => (template = template.replace("{0}", elem)))
     return template
@@ -138,11 +126,69 @@ export default class IntentsProcessing {
       case "transaction on":
         object = this.getSpeechObject(this.transactionsOn(req), req)
         break
+      case "statistics pm":
+        object = this.getPlot(this.getPeriod(req), req)
+        break
       }
       messages.push(object)
 
       return messages
   }
+
+  getPeriod(req) {
+    let name = req.body.result.parameters.account
+    let period = req.body.result.parameters.period
+    let monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+    'july', 'august', 'september', 'october', 'november', 'december']
+    let speech
+    if (name) {
+      let account = this.data.accounts.find((account) => (account.name === name))
+      if (account) {
+        let transactions = account.transactions
+        if (monthNames.indexOf(period.toLowerCase()) === -1) {
+          let monthsAmount = []
+          let yearTransactions = transactions.filter((el) => {
+            let year = new Date(el.made_on).getFullYear()
+            return year == period
+          })
+          monthNames.forEach((obj, index) => {
+            let monthAmount = transactions.filter((el) => (new Date(el.made_on).getMonth() == index))
+                                          .reduce((sum, el) => (sum += el.amount), 0)
+            monthsAmount.push(monthAmount)
+          })
+
+          return {
+            x: monthNames,
+            y: monthsAmount
+          }
+        } else {
+          let days = []
+          for(let i = 1; i <= this.daysInMonth(monthNames.indexOf(period) + 1); i++){
+            days.push(i)
+          }
+          let daysAmount = days
+          let transactionsMonth = transactions.filter((el) => (new Date(el.made_on).getMonth() == monthNames.indexOf(period)))
+          daysAmount = daysAmount.map((day) => {
+            return transactionsMonth.filter((el)=> (new Date(el.made_on).getDate() == day))
+                                    .reduce((sum, el) => (sum += el.amount), 0)
+          })
+
+          return {
+            x: days,
+            y: daysAmount
+          }
+        }
+
+      } else {
+        return {}
+      }
+    }
+  }
+
+  daysInMonth(month) {
+    return new Date(new Date().getFullYear() , month, 0).getDate()
+  }
+
 
   getPlatform(req) {
     if (req.body.originalRequest) {
@@ -152,10 +198,10 @@ export default class IntentsProcessing {
     }
   }
 
-  getPlot(req) {
+  getPlot(data, req) {
     let platform = this.getPlatform(req)
     return {
-        imageUrl: this.plotGenerator.getImageUrl(req),
+        imageUrl: this.plotGenerator.getImageUrl(data, req),
         platform: platform,
         type: 3
       }
