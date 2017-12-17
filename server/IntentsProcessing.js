@@ -129,5 +129,6 @@ export default class IntentsProcessing {
 
   imageParser(req) {
     let intentName = req.body.result.metadata.intentName
+    return "https://3c1703fe8d.site.internapcdn.net/newman/gfx/news/hires/2016/63-scientistsdi.jpg";
   }
 }
