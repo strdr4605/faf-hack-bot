@@ -145,6 +145,9 @@ export default class IntentsProcessing {
       case "currency exchange":
         object = this.getSpeechObject(this.getCurrency(req), req)
         break
+      case "salary":
+        object = this.getSpeechObject(this.whatIsMySalary(req), req)
+        break
     }
     messages.push(object)
 
@@ -256,6 +259,31 @@ export default class IntentsProcessing {
     }
     let smile = balance > 0 ? " (y)" : " :("
     let speech = this.replaceByTemplate(req.body.result.fulfillment.speech, name, balance.toFixed(2), currency1) + smile
+    return speech;
+  }
+
+  accountSalary(name) {
+    let account = this.data.accounts.find((account) => (account.name === name))
+    let transactions = account.transactions
+    let sum = 0;
+    let endDate = moment(transactions[0].made_on).add(1, 'month');
+    transactions.forEach((transaction) => {
+      if (moment(transaction.made_on).isBefore(endDate))
+      if (transaction.amount > 0) {
+        sum += transaction.amount;
+      }
+    });
+    return sum;
+  }
+
+  whatIsMySalary(req) {
+    let name = req.body.result.parameters.account
+    let account = this.data.accounts.find((account) => (account.name === name))
+    if (!account) {
+      return "No such account!"
+    }
+    let salary = this.accountSalary(name)
+    let speech = this.replaceByTemplate(req.body.result.fulfillment.speech, salary.toFixed(2), account.currency_code)
     return speech;
   }
 
