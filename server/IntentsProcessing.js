@@ -122,41 +122,56 @@ export default class IntentsProcessing {
   }
 
   speechParser(req) {
+    let messages = []
+    let object
     let intentName = req.body.result.metadata.intentName
     switch (intentName) {
       case "actual-balance":
-        return this.accountBalance(req)
+        object = this.getSpeechObject(this.accountBalance(req), req)
         break
       case "last x transaction":
-        return this.lastXTransactions(req)
+        object = this.getSpeechObject(this.lastXTransactions(req), req)
         break
       case "transaction between":
-        return this.transactionsBetween(req)
+        object = this.getSpeechObject(this.transactionsBetween(req), req)
         break
       case "transaction on":
-        return this.transactionsOn(req)
+        object = this.getSpeechObject(this.transactionsOn(req), req)
         break
-  getPlot(req) {
-    let origin
+      }
+      messages.push(object)
+
+      return messages
+  }
+
+  getPlatform(req) {
     if (req.body.originalRequest) {
-      origin = req.body.originalRequest.source
+      return req.body.originalRequest.source
     } else {
-      origin = req.body.result.source
+      return req.body.result.source
     }
-    let platform = origin
-    let messages = [
-      {
+  }
+
+  getPlot(req) {
+    let platform = this.getPlatform(req)
+    return {
         imageUrl: this.plotGenerator.getImageUrl(req),
         platform: platform,
         type: 3
       }
-    ]
-
-    return messages
   }
 
   imageParser(req) {
     let intentName = req.body.result.metadata.intentName
     return "https://3c1703fe8d.site.internapcdn.net/newman/gfx/news/hires/2016/63-scientistsdi.jpg";
+  }
+
+  getSpeechObject(speech, req) {
+    let platform = this.getPlatform(req)
+    return {
+      "platform": platform,
+      "speech": speech,
+      "type": 0
+    }
   }
 }
