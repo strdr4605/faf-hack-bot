@@ -153,6 +153,7 @@ export default class IntentsProcessing {
         break
       case "salary":
         object = this.getSpeechObject(this.whatIsMySalary(req), req)
+        break
       case "buy":
         let account = req.body.result.parameters.account
         let moneyAmount = 0
@@ -168,22 +169,18 @@ export default class IntentsProcessing {
           object = this.getSpeechObject("No such accout", req)
         }
         let response = await this.getThingsToBuy(moneyAmount)
-        //console.log(response)
-        object = this.parseAmazonResponse(response, req)
-        console.log(object)
+        messages = this.parseAmazonResponse(response, req)
+        // console.log(object)
         break
-
-        return this.parseAmazonResponse(response, req)
     }
 
-    messages.push(object)
+    // messages.push(object)
 
     return messages
   }
 
   getThingsToBuy(moneyAmount) {
-    let response = this.amazonAPI.search(moneyAmount, 0)
-    return response
+    return this.amazonAPI.search(moneyAmount, 0)
   }
 
   parseAmazonResponse(response, req) {
@@ -192,7 +189,7 @@ export default class IntentsProcessing {
     for(var i = 0; i < response.length; i++) {
       messages.push({
         "platform": platform,
-        "speech": response[i].DetailPageURL,
+        "speech": response[i].DetailPageURL[0],
         "type": 0
       })
     }

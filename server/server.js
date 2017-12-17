@@ -34,14 +34,15 @@ export default class Server {
       origin = req.body.result.source
     }
 
-    let messages = this.intent.speechParser(req)
-
-    res.send({
-      messages: messages,
-      displayText: "123",
-      data: {},
-      contextOut: [],
-      source: origin
+    this.intent.speechParser(req).then(messages => {
+      res.send({
+        messages: messages,
+        displayText: "123",
+        data: {},
+        contextOut: [],
+        source: origin
+      })
     })
+
   }
 }
