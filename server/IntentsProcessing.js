@@ -1,6 +1,8 @@
 import config from './config'
 import PlotGenerator from './plotGenerator'
 import http from 'http'
+import moment from 'moment'
+
 require("babel-core/register");
 require("babel-polyfill");
 
@@ -77,12 +79,16 @@ export default class IntentsProcessing {
     let startDate = req.body.result.parameters.date1
     let endDate = req.body.result.parameters.date2
     let name = req.body.result.parameters.account
+    console.log("Show transactions between ", startDate, "and", endDate, "for", name)
     let account = this.data.accounts.find((account) => (account.name === name))
+    if (!account) {
+      return "No such account!";
+    }
     let transactions = account.transactions
     let speech = "Transactions between date " + startDate + " and " + endDate + " are:\n"
     let bool = false
     transactions.forEach((transaction, i) => {
-      if (new Date(transaction.made_on) >= new Date(startDate) && new Date(transaction.made_on) <= new Date(endDate)) {
+      if (moment(transaction.made_on).isAfter(moment(startDate)) && moment(transaction.made_on).isBefore(moment(endDate))) {
         bool = true;
         speech += (i + 1) + ". " + transaction.amount + " " + transaction.currency_code + ", " + transaction.made_on + ", " + transaction.description + "\n"
       }
@@ -101,7 +107,7 @@ export default class IntentsProcessing {
     let speech = "Transactions on date " + date + " are:\n"
     let bool = false
     transactions.forEach((transaction, i) => {
-      if (new Date(transaction.made_on).getTime() === new Date(date).getTime()) {
+      if (moment(transaction.made_on).isSame(date)) {
         bool = true;
         speech += (i + 1) + ". " + transaction.amount + " " + transaction.currency_code + ", " + transaction.made_on + ", " + transaction.description + "\n"
       }
@@ -116,6 +122,7 @@ export default class IntentsProcessing {
     let messages = []
     let object
     let intentName = req.body.result.metadata.intentName
+    console.log(intentName);
     switch (intentName) {
       case "actual-balance":
         object = this.getSpeechObject(this.accountBalance(req), req)
@@ -263,13 +270,14 @@ export default class IntentsProcessing {
     } else {
       return this.replaceByTemplate(req.body.result.fulfillment.speech, currency1, currency2, currency_db["USD" + currency2] / currency_db["USD" + currency1].toFixed(2));
     }
+  }
 
-    getSpeechObject(speech, req) {
-      let platform = this.getPlatform(req)
-      return {
-        "platform": platform,
-        "speech": speech,
-        "type": 0
-      }
+  getSpeechObject(speech, req) {
+    let platform = this.getPlatform(req)
+    return {
+      "platform": platform,
+      "speech": speech,
+      "type": 0
     }
   }
+}
